@@ -12,38 +12,45 @@ async function getPage(): Promise<Page> {
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
   }
-  if (!page) {
-    page = await browser.newPage();
-  }
-  await page.goto('https://www.believescreener.com/', {
+  // always open a fresh page to avoid stale contexts
+  const pg = await browser.newPage();
+  await pg.goto('https://www.believescreener.com/', {
     waitUntil: 'networkidle',
   });
-  return page;
+  return pg;
 }
 
 export async function GET() {
   try {
     const pg = await getPage();
+    const selector = 'body > div > header > div > div > div > span';
 
-    // wait for the span to appear
-    await pg.waitForSelector('body > div > header > div > div > div > span', {
-      timeout: 10_000,
-    });
-    // grab its text
-    const raw = await pg.textContent(
-      'body > div > header > div > div > div > span'
+    // 1) wait until the span text is no longer "0"
+    await pg.waitForFunction(
+      (sel) => {
+        const el = document.querySelector(sel);
+        return el?.textContent?.trim() !== '0';
+      },
+      selector,
+      { timeout: 10_000 }
     );
-    const viewCount = parseInt(raw?.trim() || '', 10);
+
+    // 2) grab its real text
+    const viewCountText = await pg.$eval(
+      selector,
+      (el) => el.textContent?.trim() || ''
+    );
+    const viewCount = parseInt(viewCountText, 10);
     if (isNaN(viewCount)) {
-      throw new Error(`Could not parse "${raw}"`);
+      throw new Error(`Could not parse "${viewCountText}"`);
     }
 
-    // — Persist into KV as a plain object —
+    // 3) persist only after we have a real number
     await kv.lpush('views', {
       timestamp: new Date().toISOString(),
       count: viewCount,
     });
-    // Optionally trim to last N points:
+    // if you want to cap the list length:
     // await kv.ltrim('views', 0, 17280)
 
     return NextResponse.json({ viewCount });
