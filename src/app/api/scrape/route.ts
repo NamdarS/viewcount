@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { chromium } from 'playwright';
-import kv from '../../../lib/kv'; // ← our new import
 import type { Browser, Page } from 'playwright';
+import kv from '../../../lib/kv';
 
 let browser: Browser | null = null;
 let page: Page | null = null;
 
-// get (or create) our persistent page
-async function getPage() {
+async function getPage(): Promise<Page> {
   if (!browser) {
     browser = await chromium.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -16,7 +15,6 @@ async function getPage() {
   if (!page) {
     page = await browser.newPage();
   }
-  // always reload so we get the freshest number
   await page.goto('https://www.believescreener.com/', {
     waitUntil: 'networkidle',
   });
@@ -25,40 +23,28 @@ async function getPage() {
 
 export async function GET() {
   try {
-    const page = await getPage();
+    const pg = await getPage();
 
-    // wait up to 10s for the span to go from "0" → real value
-    await page.waitForFunction(
-      () => {
-        const el = document.querySelector(
-          'body > div > header > div > div > div > span'
-        );
-        return el?.textContent?.trim() !== '0';
-      },
-      { timeout: 10_000 }
+    // wait for the span to appear
+    await pg.waitForSelector('body > div > header > div > div > div > span', {
+      timeout: 10_000,
+    });
+    // grab its text
+    const raw = await pg.textContent(
+      'body > div > header > div > div > div > span'
     );
-
-    // now grab it
-    const viewCountText = await page.$eval(
-      'body > div > header > div > div > div > span',
-      (el) => el.textContent?.trim() || ''
-    );
-
-    const viewCount = parseInt(viewCountText, 10);
+    const viewCount = parseInt(raw?.trim() || '', 10);
     if (isNaN(viewCount)) {
-      throw new Error(`Could not parse "${viewCountText}"`);
+      throw new Error(`Could not parse "${raw}"`);
     }
 
-    // ——— Persist into Vercel KV ———
-    await kv.lpush(
-      'views',
-      JSON.stringify({
-        timestamp: new Date().toISOString(),
-        count: viewCount,
-      })
-    );
-    // Optionally trim to last N points (e.g. keep ~1 day at 5s intervals):
-    // await kv.ltrim('views', 0, 17280);
+    // — Persist into KV as a plain object —
+    await kv.lpush('views', {
+      timestamp: new Date().toISOString(),
+      count: viewCount,
+    });
+    // Optionally trim to last N points:
+    // await kv.ltrim('views', 0, 17280)
 
     return NextResponse.json({ viewCount });
   } catch (err) {
