@@ -106,11 +106,11 @@ export default function Home() {
     <main
       style={{ padding: '2rem', background: '#f0f2f5', minHeight: '100vh' }}
     >
-      <h1 style={{ textAlign: 'center', marginBottom: '1rem' }}>
+      <h1 style={{ textAlign: 'center', marginBottom: '1rem', color: 'black' }}>
         Live View Count
       </h1>
       <p
-        style={{ fontSize: '3rem', textAlign: 'center', marginBottom: '2rem' }}
+        style={{ fontSize: '3rem', textAlign: 'center', marginBottom: '2rem', color: 'black' }}
       >
         {live === null ? 'Loading…' : live.toLocaleString()}
       </p>
