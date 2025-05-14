@@ -59,7 +59,7 @@ export default function Home() {
       }
     }
     fetchCount();
-    const id = setInterval(fetchCount, 5_000);
+    const id = setInterval(fetchCount, 120_000);
     return () => {
       cancelled = true;
       clearInterval(id);
