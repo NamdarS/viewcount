@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { chromium, Browser, Page } from 'playwright';
+import { chromium } from 'playwright';
+import kv from '../../../lib/kv'; // ← our new import
+import type { Browser, Page } from 'playwright';
 
 let browser: Browser | null = null;
 let page: Page | null = null;
@@ -46,6 +48,17 @@ export async function GET() {
     if (isNaN(viewCount)) {
       throw new Error(`Could not parse "${viewCountText}"`);
     }
+
+    // ——— Persist into Vercel KV ———
+    await kv.lpush(
+      'views',
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        count: viewCount,
+      })
+    );
+    // Optionally trim to last N points (e.g. keep ~1 day at 5s intervals):
+    // await kv.ltrim('views', 0, 17280);
 
     return NextResponse.json({ viewCount });
   } catch (err) {
