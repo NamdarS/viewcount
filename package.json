@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "npx playwright install && next build",
+    "prepare": "npx playwright install chromium",
+    "vercel-build": "next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
