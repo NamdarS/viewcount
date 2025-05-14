@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { chromium } from 'playwright';
-import type { Browser, Page } from 'playwright';
+import { chromium } from 'playwright-chromium';
+import type { Browser, Page } from 'playwright-chromium';
 import kv from '../../../lib/kv';
 
 let browser: Browser | null = null;
-//const page: Page | null = null;
+// const page: Page | null = null;
 
 async function getPage(): Promise<Page> {
   if (!browser) {
