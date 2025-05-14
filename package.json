@@ -4,10 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "npx playwright install chromium && next build",
+    "build": "npx playwright install && next build",
     "start": "next start",
-    "lint": "next lint",
-    "postinstall": "npx playwright install chromium"
+    "lint": "next lint"
   },
   "dependencies": {
     "@vercel/kv": "^3.0.0",
