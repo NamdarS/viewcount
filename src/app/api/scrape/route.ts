@@ -4,7 +4,7 @@ import type { Browser, Page } from 'playwright';
 import kv from '../../../lib/kv';
 
 let browser: Browser | null = null;
-let page: Page | null = null;
+const page: Page | null = null;
 
 async function getPage(): Promise<Page> {
   if (!browser) {
